@@ -27,7 +27,7 @@ import { useUiStore } from '../../stores/uiStore';
 import { useNotifications } from '../../api/hooks';
 import { Avatar, Button } from '../ui';
 import { avatarGradient, cn } from '../../lib/utils';
-import { supabase } from '../../lib/supabase';
+
 
 const navItems = [
   { to: '/dashboard',   label: 'Dashboard',   icon: LayoutDashboard },

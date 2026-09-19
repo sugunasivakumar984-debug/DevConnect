@@ -235,7 +235,7 @@ export default function Landing() {
           <AnimatedHeadline
             text="connect."
             className="block bg-clip-text text-transparent"
-            // @ts-ignore style works here
+            // @ts-expect-error style works here
           />
         </h1>
         {/* Gradient on "connect." */}

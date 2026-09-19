@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Sparkles, X, Send } from 'lucide-react';
 import { useAiChat } from '../../api/hooks';
 import { useUiStore } from '../../stores/uiStore';
-import { Button } from '../ui';
 
 interface Turn {
   role: 'user' | 'assistant';

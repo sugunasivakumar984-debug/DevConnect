@@ -25,7 +25,7 @@ export default function Developers() {
     if (aiQuery.trim().length < 3) return;
     try {
       const result = await aiSearch.mutateAsync(aiQuery);
-      setAiResults(result.results);
+      setAiResults(result.suggestions);
       toast.success('AI search complete');
     } catch (err) {
       toast.error((err as Error).message);
