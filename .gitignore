@@ -1,0 +1,47 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# builds
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# env (NEVER COMMIT)
+.env
+.env.local
+.env.*.local
+server/.env
+client/.env
+!.env.example
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs/
+*.log
+
+# editors / os
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# supabase
+supabase/.temp/
+supabase/.branches/
+
+# testing
+playwright-report/
+test-results/
+.nyc_output/
+
+# misc
+.cache/
+.turbo/
+.dist/

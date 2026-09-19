@@ -1,0 +1,18 @@
+# Docker Compose for DevConnect local development.
+# Supabase is cloud-hosted (free tier) — these services are the app tier only.
+# Usage: docker compose up --build
+
+  client:
+    build:
+      context: .
+      dockerfile: client/Dockerfile
+    container_name: devconnect-client
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: http://localhost:5000
+    ports:
+      - "5173:80"
+
+networks:
+  default:
+    name: devconnect-net
