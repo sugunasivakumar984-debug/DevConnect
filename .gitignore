@@ -45,3 +45,5 @@ test-results/
 .cache/
 .turbo/
 .dist/
+
+.vercel

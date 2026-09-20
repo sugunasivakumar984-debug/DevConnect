@@ -125,7 +125,7 @@ export default function Login() {
             </div>
 
             <div className="pt-2">
-              <Button type="submit" size="lg" className="w-full text-[16px]" loading={loading}>
+              <Button type="submit" size="lg" className="w-full text-[16px] rounded-full shadow-md hover:shadow-lg transition-all" loading={loading}>
                 Sign in
               </Button>
             </div>
@@ -140,7 +140,7 @@ export default function Login() {
           <Button
             variant="secondary"
             size="lg"
-            className="w-full text-[16px]"
+            className="w-full text-[16px] rounded-full hover:shadow-md transition-all"
             onClick={onGithub}
             loading={githubLoading}
           >

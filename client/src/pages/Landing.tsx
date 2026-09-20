@@ -1,7 +1,9 @@
-import { Link } from 'react-router-dom';
-import { ArrowRight, Code2, Users, Sparkles, FileText, Trophy, MessageSquare, Github, Zap, Shield } from 'lucide-react';
+import { Link, Navigate } from 'react-router-dom';
+import { ArrowRight, Code2, Users, Sparkles, FileText, Trophy, MessageSquare, Github, Zap, Shield, Sun, Moon, Monitor } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { Button } from '../components/ui';
+import { useAuthStore } from '../stores/authStore';
+import { useUiStore } from '../stores/uiStore';
 
 const features = [
   {
@@ -129,7 +131,18 @@ function GlassMockup() {
 }
 
 export default function Landing() {
+  const session = useAuthStore(s => s.session);
+  const { theme, setTheme } = useUiStore();
+  
+  const nextTheme = theme === 'system' ? 'dark' : theme === 'dark' ? 'light' : 'system';
+  const ThemeIcon = theme === 'system' ? Monitor : theme === 'dark' ? Moon : Sun;
+
   const featuresRef = useRef<HTMLDivElement>(null);
+
+  // Redirect if logged in
+  if (session) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   // Scroll-reveal for feature cards
   useEffect(() => {
@@ -151,8 +164,7 @@ export default function Landing() {
 
   return (
     <div
-      className="min-h-screen overflow-x-hidden"
-      style={{ background: '#FFFFFF', color: '#1D1D1F' }}
+      className="min-h-screen overflow-x-hidden bg-bg-primary text-label-primary transition-colors duration-300"
     >
       {/* Ambient background */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
@@ -177,35 +189,30 @@ export default function Landing() {
         className="relative z-20 mx-auto flex max-w-7xl items-center justify-between px-6 py-5"
       >
         <div className="flex items-center gap-2.5">
-          <span
-            className="grid h-9 w-9 place-items-center rounded-[12px] font-bold text-white text-lg"
-            style={{
-              background: 'linear-gradient(135deg, #007AFF 0%, #5AC8FA 100%)',
-              boxShadow:  '0 4px 12px rgba(0,122,255,0.30)',
-            }}
-          >
-            D
-          </span>
-          <span className="text-[17px] font-semibold tracking-[-0.02em]">DevConnect</span>
+          <Link to="/" className="flex items-center select-none">
+            <img src="/Logo.png" alt="DevConnect Logo" className="h-[44px] w-auto object-contain scale-110 origin-left drop-shadow-md" />
+          </Link>
         </div>
-        <nav className="flex items-center gap-2">
+        <nav className="flex items-center gap-2 sm:gap-4">
+          <button
+            onClick={() => setTheme(nextTheme)}
+            className="hidden sm:flex h-9 w-9 items-center justify-center rounded-full bg-black/5 dark:bg-white/10 text-label-secondary hover:text-label-primary transition-all"
+            aria-label="Toggle theme"
+          >
+            <ThemeIcon size={18} />
+          </button>
+          
           <Link
             to="/blog"
-            className="hidden text-[15px] font-medium text-label-secondary hover:text-label-primary transition-colors sm:block px-3 py-1.5"
+            className="hidden text-[15px] font-medium text-label-secondary hover:text-label-primary transition-colors sm:block px-2"
           >
             Blog
           </Link>
-          <Link
-            to="/developers"
-            className="hidden text-[15px] font-medium text-label-secondary hover:text-label-primary transition-colors sm:block px-3 py-1.5"
-          >
-            Developers
-          </Link>
           <Link to="/login">
-            <Button variant="ghost" size="sm">Sign in</Button>
+            <Button variant="ghost" size="sm" className="hidden sm:inline-flex rounded-full">Sign in</Button>
           </Link>
           <Link to="/register">
-            <Button size="sm">Get started</Button>
+            <Button size="sm" className="rounded-full shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all">Get started</Button>
           </Link>
         </nav>
       </header>
@@ -214,16 +221,13 @@ export default function Landing() {
       <section className="relative z-10 mx-auto max-w-5xl px-6 pt-16 pb-8 text-center">
         {/* Eyebrow chip */}
         <div
-          className="inline-flex items-center gap-2 rounded-pill px-4 py-2 text-sm font-medium mb-8"
+          className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium mb-8 bg-black/5 dark:bg-white/10 border border-black/5 dark:border-white/10 text-label-secondary"
           style={{
-            background: 'rgba(0,122,255,0.08)',
-            color:      '#007AFF',
-            border:     '1px solid rgba(0,122,255,0.15)',
             animation:  'fadeRise 600ms 80ms both',
           }}
         >
-          <Sparkles size={14} />
-          Built with Supabase &amp; React — zero server latency
+          <Sparkles size={14} className="text-apple-blue" />
+          The professional network for developers
         </div>
 
         {/* Main headline */}
@@ -262,13 +266,13 @@ export default function Landing() {
         >
           <Link to="/register">
             <button
-              className="btn-apple-primary h-14 px-8 text-[17px] rounded-[18px]"
+              className="btn-apple-primary h-14 px-8 text-[17px] rounded-full shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all"
             >
               Create your profile <ArrowRight size={18} />
             </button>
           </Link>
           <Link to="/developers">
-            <button className="btn-apple-glass h-14 px-8 text-[17px] rounded-[18px]">
+            <button className="btn-apple-glass h-14 px-8 text-[17px] rounded-full hover:shadow-md transition-all">
               Explore developers
             </button>
           </Link>
@@ -340,14 +344,10 @@ export default function Landing() {
       {/* ── Final CTA ──────────────────────────────────────── */}
       <section className="relative z-10 mx-auto max-w-4xl px-6 pb-28">
         <div
-          className="glass-card p-14 text-center"
-          style={{
-            background: 'linear-gradient(135deg, rgba(0,122,255,0.06) 0%, rgba(175,82,222,0.06) 100%)',
-          }}
+          className="glass-card p-14 text-center border border-black/5 dark:border-white/10"
         >
           <div
-            className="inline-flex items-center gap-2 rounded-pill px-4 py-2 text-sm font-semibold mb-6"
-            style={{ background: 'rgba(0,122,255,0.1)', color: '#007AFF' }}
+            className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold mb-6 bg-apple-blue/10 text-apple-blue"
           >
             <Zap size={14} /> Free forever
           </div>
@@ -358,7 +358,7 @@ export default function Landing() {
             Join developers who use DevConnect to learn in public, earn endorsements and grow their network.
           </p>
           <Link to="/register">
-            <button className="btn-apple-primary h-14 px-10 text-[17px] rounded-[18px]">
+            <button className="btn-apple-primary h-14 px-10 text-[17px] rounded-full shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all">
               Get started — it&apos;s free <ArrowRight size={18} />
             </button>
           </Link>
@@ -369,7 +369,7 @@ export default function Landing() {
       </section>
 
       {/* ── Footer ─────────────────────────────────────────── */}
-      <footer style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }} className="py-10 relative z-10">
+      <footer className="py-10 relative z-10 border-t border-black/5 dark:border-white/10">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-6 text-sm text-label-tertiary sm:flex-row">
           <p>© {new Date().getFullYear()} DevConnect</p>
           <a

@@ -686,36 +686,52 @@ export async function getAuditLogs(action?: string) {
 }
 
 // ---------------------------------------------------------------------------
-// AI (calls OpenRouter directly since edge functions failed deployment)
+// AI (calls Google Gemini directly via AI Studio API)
 // ---------------------------------------------------------------------------
 
-async function callOpenRouter(messages: any[], model = 'meta-llama/llama-3.3-70b-instruct:free') {
-  const openrouterKey = import.meta.env.VITE_OPENROUTER_API_KEY;
-  if (!openrouterKey) throw new Error('Missing VITE_OPENROUTER_API_KEY');
+async function callGoogleAI(messages: any[]) {
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  if (!apiKey) throw new Error('Missing Gemini API Key');
 
-  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+  // Convert OpenAI-style messages to Gemini format
+  const contents = [];
+  let systemInstruction = undefined;
+
+  for (const m of messages) {
+    if (m.role === 'system') {
+      systemInstruction = { parts: [{ text: m.content }] };
+    } else {
+      contents.push({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.content }]
+      });
+    }
+  }
+
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`, {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${openrouterKey}`,
       "Content-Type": "application/json",
-      "HTTP-Referer": "https://devconnect.app",
-      "X-Title": "DevConnect",
     },
-    body: JSON.stringify({ model, messages, temperature: 0.7 }),
+    body: JSON.stringify({
+      contents,
+      systemInstruction,
+      generationConfig: { temperature: 0.7 }
+    }),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error('OpenRouter error:', errorText);
+    console.error('Gemini error:', errorText);
     throw new Error(`AI service error: ${response.status}`);
   }
   const data = await response.json();
-  return data.choices?.[0]?.message?.content || '';
+  return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 }
 
 export const ai = {
   profileSummary: async (body?: any) => {
-    const text = await callOpenRouter([
+    const text = await callGoogleAI([
       { role: 'system', content: 'You are a professional technical writer. Write concisely and professionally.' },
       { role: 'user', content: `Write a 120-word professional bio for a developer named ${body?.name || 'Developer'}.
 Skills: ${(body?.skills || []).join(', ') || 'Not listed'}
@@ -727,7 +743,7 @@ Output ONLY the bio text, no headings or extra formatting.` },
   },
 
   blogAssist: async (draft: string) => {
-    const text = await callOpenRouter([
+    const text = await callGoogleAI([
       { role: 'system', content: 'You are an expert technical editor. Always respond with valid JSON only, no markdown code fences.' },
       { role: 'user', content: `Analyze this blog draft and return a JSON object with:
 - "titles": array of 3 catchy title ideas (strings)
@@ -750,7 +766,7 @@ Draft: ${draft}` },
   },
 
   skillGap: async (body: any) => {
-    const text = await callOpenRouter([
+    const text = await callGoogleAI([
       { role: 'system', content: 'You are a career advisor for software engineers. Always respond with valid JSON only, no markdown code fences.' },
       { role: 'user', content: `Analyze the skill gap for a developer targeting the role of "${body?.role || 'Senior Developer'}".
 Current skills: ${(body?.skills || []).join(', ')}
@@ -778,7 +794,7 @@ Return a JSON object with:
   },
 
   projectDescription: async (body: any) => {
-    const text = await callOpenRouter([
+    const text = await callGoogleAI([
       { role: 'system', content: 'You are an expert project manager. Write concise, professional project descriptions.' },
       { role: 'user', content: `Write a 2-paragraph professional description for:
 Title: ${body?.title || 'Untitled Project'}
@@ -790,7 +806,7 @@ Output ONLY the description text.` },
   },
 
   codeReview: async (body: any) => {
-    const text = await callOpenRouter([
+    const text = await callGoogleAI([
       { role: 'system', content: 'You are a senior software engineer. Always respond with valid JSON only, no markdown code fences.' },
       { role: 'user', content: `Review this ${body?.language || 'code'} snippet and return a JSON object with:
 - "severity": overall severity ("low" | "medium" | "high")
@@ -799,7 +815,7 @@ Output ONLY the description text.` },
 
 Code:
 ${body?.code}` },
-    ], 'qwen/qwen-2.5-coder-32b-instruct:free');
+    ]);
     try {
       return JSON.parse(text.replace(/```json\n?|\n?```/g, '').trim());
     } catch {
@@ -813,12 +829,12 @@ ${body?.code}` },
     ];
     if (body?.history?.length) messages.push(...body.history);
     messages.push({ role: 'user', content: body?.message });
-    const text = await callOpenRouter(messages);
+    const text = await callGoogleAI(messages);
     return { reply: text };
   },
 
   resume: async () => {
-    const text = await callOpenRouter([
+    const text = await callGoogleAI([
       { role: 'system', content: 'You are an expert resume writer for software engineers. Write clean, ATS-friendly markdown.' },
       { role: 'user', content: `Generate a professional one-page developer resume in Markdown format.
 Structure: # Name, ## Summary, ## Skills, ## Experience, ## Projects, ## Education
@@ -828,7 +844,7 @@ Make it realistic with placeholder data clearly marked with [brackets]. Keep it 
   },
 
   aiSearch: async (query: string) => {
-    const text = await callOpenRouter([
+    const text = await callGoogleAI([
       { role: 'system', content: 'You are a developer discovery assistant.' },
       { role: 'user', content: `Help find developers matching: ${query}. Suggest 3 search strategies.` },
     ]);
