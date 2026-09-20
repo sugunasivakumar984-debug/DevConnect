@@ -13,6 +13,7 @@ import {
   FolderKanban,
   BadgeCheck,
   ThumbsUp,
+  Code2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
@@ -28,6 +29,7 @@ import { useAuthStore } from '../stores/authStore';
 import { Avatar, Badge, Button, Card, CardBody, CardHeader, EmptyState, Skeleton, Reveal } from '../components/ui';
 import { avatarGradient, availabilityLabel, formatDate, mentorLabel, cn } from '../lib/utils';
 import { useNavigate } from 'react-router-dom';
+import DeveloperPlatforms from '../components/profile/DeveloperPlatforms';
 
 export default function Profile() {
   const { username } = useParams<{ username: string }>();
@@ -42,7 +44,7 @@ export default function Profile() {
   const startConversation = useStartConversation();
   const toggleFollow = useToggleFollow();
   const endorse = useEndorseSkill();
-  const [tab, setTab] = useState<'projects' | 'experience' | 'about'>('projects');
+  const [tab, setTab] = useState<'projects' | 'experience' | 'about' | 'developer'>('projects');
 
   if (isLoading) {
     return (
@@ -247,18 +249,19 @@ export default function Profile() {
 
       {/* ── Content Tabs ───────────────────────────────────── */}
       <Reveal delay={200}>
-        <div className="flex gap-6 border-b border-[rgba(0,0,0,0.06)] px-2">
-          {(['projects', 'experience', 'about'] as const).map((t) => (
+        <div className="flex gap-6 border-b border-[rgba(0,0,0,0.06)] px-2 overflow-x-auto">
+          {(['projects', 'experience', 'about', 'developer'] as const).map((t) => (
             <button
               key={t}
               type="button"
               onClick={() => setTab(t)}
               className={cn(
-                'relative pb-3 text-[15px] font-semibold capitalize transition-colors',
+                'relative pb-3 text-[15px] font-semibold capitalize transition-colors whitespace-nowrap flex items-center gap-1.5',
                 tab === t ? 'text-label-primary' : 'text-label-tertiary hover:text-label-secondary'
               )}
             >
-              {t}
+              {t === 'developer' && <Code2 size={14} className={tab === t ? 'text-apple-blue' : 'text-label-quaternary'} />}
+              {t === 'developer' ? 'Developer' : t}
               {tab === t && (
                 <div className="absolute bottom-0 left-0 h-0.5 w-full bg-label-primary rounded-t-full animate-fade-in" />
               )}
@@ -411,6 +414,12 @@ export default function Profile() {
                 </div>
               </CardBody>
             </Card>
+          )}
+
+          {tab === 'developer' && (
+            <div className="animate-fade-rise-sm">
+              <DeveloperPlatforms profileId={profile.id} isSelf={isSelf} />
+            </div>
           )}
         </div>
       </Reveal>

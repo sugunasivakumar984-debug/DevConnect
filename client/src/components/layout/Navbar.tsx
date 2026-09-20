@@ -112,72 +112,65 @@ export function Navbar() {
           WebkitBackdropFilter:   scrolled ? 'blur(32px) saturate(200%)' : 'blur(20px) saturate(180%)',
         }}
       >
-        <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 md:px-6">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 md:px-6">
+          {/* Left section */}
+          <div className="flex flex-1 items-center justify-start gap-3">
+            {/* Mobile hamburger */}
+            <button
+              type="button"
+              className={cn(
+                'rounded-xl p-2 text-label-tertiary lg:hidden',
+                'hover:bg-[rgba(0,0,0,0.05)] dark:hover:bg-[rgba(255,255,255,0.07)] hover:text-label-primary',
+                'active:scale-90 transition-all duration-fast ease-apple'
+              )}
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              aria-label="Toggle navigation"
+            >
+              {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
 
-          {/* Mobile hamburger */}
-          <button
-            type="button"
-            className={cn(
-              'rounded-xl p-2 text-label-tertiary lg:hidden',
-              'hover:bg-black/[0.05] hover:text-label-primary',
-              'active:scale-90 transition-all duration-fast ease-apple'
-            )}
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            aria-label="Toggle navigation"
-          >
-            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
+            {/* Logo */}
+            <Link
+              to="/dashboard"
+              className="flex items-center select-none"
+            >
+              <img src="/Logo.png" alt="DevConnect Logo" className="h-[60px] w-auto object-contain" style={{ transform: 'scale(1.15)', transformOrigin: 'left center' }} />
+            </Link>
+          </div>
 
-          {/* Logo */}
-          <Link
-            to="/dashboard"
-            className="flex items-center gap-2.5 select-none"
-          >
-            <span
-              className="grid h-9 w-9 place-items-center rounded-[12px] font-bold text-white text-lg"
+          {/* Center section: Search */}
+          <div className="flex flex-1 items-center justify-center px-4">
+            <button
+              type="button"
+              onClick={toggleCommandPalette}
+              className={[
+                'hidden items-center justify-between md:flex w-full max-w-[460px]',
+                'h-10 rounded-[12px] px-4 text-[14px] font-medium text-label-secondary',
+                'transition-all duration-[250ms] ease-apple will-change-transform',
+                'hover:text-label-primary hover:scale-[1.01]',
+                'active:scale-[0.98] active:opacity-80'
+              ].join(' ')}
               style={{
-                background: 'linear-gradient(135deg, #007AFF 0%, #5AC8FA 100%)',
-                boxShadow:  '0 4px 12px rgba(0,122,255,0.30)',
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--separator)',
+                boxShadow: 'var(--shadow-sm)'
               }}
             >
-              D
-            </span>
-            <span
-              className="hidden text-[17px] font-semibold tracking-[-0.02em] text-label-primary sm:block"
-            >
-              DevConnect
-            </span>
-          </Link>
-
-          {/* Search pill */}
-          <button
-            type="button"
-            onClick={toggleCommandPalette}
-            className={[
-              'ml-3 hidden items-center gap-2 md:flex',
-              'h-9 rounded-pill px-4 text-[14px] font-medium text-label-secondary',
-              'transition-all duration-[250ms] ease-apple will-change-transform',
-              'hover:text-label-primary hover:scale-[1.02]',
-              'active:scale-[0.96] active:opacity-80'
-            ].join(' ')}
-            style={{
-              background: 'var(--bg-secondary)',
-              border: '1px solid var(--separator)',
-              boxShadow: 'var(--shadow-sm)'
-            }}
-          >
-            <Search size={14} className="opacity-70" />
-            <span>Search…</span>
-            <kbd
-              className="ml-6 flex items-center gap-0.5 rounded-[6px] px-1.5 py-0.5 text-[10px] font-bold text-label-tertiary"
-              style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border)' }}
-            >
-              <CommandIcon size={10} /> K
-            </kbd>
-          </button>
+              <div className="flex items-center gap-2">
+                <Search size={16} className="opacity-70" />
+                <span>Search DevConnect...</span>
+              </div>
+              <kbd
+                className="flex items-center gap-0.5 rounded-[6px] px-2 py-0.5 text-[11px] font-bold text-label-tertiary"
+                style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border)' }}
+              >
+                <CommandIcon size={12} /> K
+              </kbd>
+            </button>
+          </div>
 
           {/* Right actions */}
-          <div className="ml-auto flex items-center gap-1">
+          <div className="flex flex-1 items-center justify-end gap-1">
 
             {/* Notification bell */}
             <button
@@ -247,7 +240,10 @@ export function Navbar() {
                     boxShadow:           'var(--shadow-modal)',
                   }}
                 >
-                  <div className="px-4 py-3.5 border-b border-[rgba(0,0,0,0.06)]">
+                  <div
+                    className="px-4 py-3.5"
+                    style={{ borderBottom: '1px solid var(--glass-border-soft)' }}
+                  >
                     <p className="truncate text-sm font-semibold text-label-primary">
                       {profile?.full_name ?? 'Developer'}
                     </p>
@@ -264,18 +260,21 @@ export function Navbar() {
                     <button
                       type="button"
                       onClick={() => setTheme(nextTheme)}
-                      className="flex w-full items-center gap-2.5 rounded-[12px] px-3 py-2.5 text-left text-sm text-label-secondary hover:bg-black/[0.05] hover:text-label-primary transition-all duration-fast ease-apple"
+                      className="flex w-full items-center gap-2.5 rounded-[12px] px-3 py-2.5 text-left text-sm text-label-secondary hover:bg-[rgba(0,0,0,0.05)] dark:hover:bg-[rgba(255,255,255,0.07)] hover:text-label-primary transition-all duration-fast ease-apple"
                     >
                       <ThemeIcon size={15} className={theme === 'dark' ? 'text-apple-orange' : theme === 'light' ? 'text-apple-purple' : 'text-label-tertiary'} />
                       {theme === 'dark' ? 'Light mode' : theme === 'light' ? 'System mode' : 'Dark mode'}
                     </button>
 
-                    <div className="my-1 h-px bg-[rgba(0,0,0,0.06)]" />
+                    <div
+                      className="my-1 h-px"
+                      style={{ background: 'var(--glass-border-soft)' }}
+                    />
 
                     <button
                       type="button"
                       onClick={handleSignOut}
-                      className="flex w-full items-center gap-2.5 rounded-[12px] px-3 py-2.5 text-left text-sm text-apple-red hover:bg-apple-red/8 transition-all duration-fast ease-apple"
+                      className="flex w-full items-center gap-2.5 rounded-[12px] px-3 py-2.5 text-left text-sm text-apple-red hover:bg-[rgba(255,59,48,0.08)] dark:hover:bg-[rgba(255,59,48,0.12)] transition-all duration-fast ease-apple"
                     >
                       <LogOut size={15} /> Sign out
                     </button>
@@ -306,9 +305,7 @@ export function Navbar() {
             }}
           >
             <div className="mb-4 flex items-center justify-between">
-              <span className="text-[17px] font-semibold tracking-tight text-label-primary">
-                DevConnect
-              </span>
+              <img src="/Logo.png" alt="DevConnect Logo" className="h-12 w-auto object-contain scale-110 origin-left" />
               <button
                 onClick={() => setSidebarOpen(false)}
                 className="rounded-xl p-1.5 text-label-tertiary hover:bg-black/[0.05] transition-colors"
@@ -387,7 +384,7 @@ export function Sidebar() {
             Generate bios, review code, find skill gaps and more.
           </p>
           <Link to="/ai" className="mt-3 block">
-            <Button size="sm" className="w-full !bg-gradient-to-r !from-apple-purple !to-apple-pink !border-0">
+            <Button size="sm" className="w-full">
               Open assistant
             </Button>
           </Link>

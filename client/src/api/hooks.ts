@@ -317,6 +317,39 @@ export function useReactToFeedPost() {
 }
 
 // ---------------------------------------------------------------------------
+// Feed Comments
+// ---------------------------------------------------------------------------
+export function useFeedComments(postId: string) {
+  return useQuery({
+    queryKey: ['feed_comments', postId],
+    queryFn: () => db.getFeedComments(postId),
+    enabled: Boolean(postId),
+  });
+}
+
+export function useCreateFeedComment(postId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (content: string) => db.createFeedComment(postId, content),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['feed_comments', postId] });
+      void qc.invalidateQueries({ queryKey: ['feed'] });
+    },
+  });
+}
+
+export function useDeleteFeedComment(postId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => db.deleteFeedComment(id),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['feed_comments', postId] });
+      void qc.invalidateQueries({ queryKey: ['feed'] });
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Connections
 // ---------------------------------------------------------------------------
 export function useConnections() {
@@ -717,3 +750,60 @@ export function useHealth() {
 // Missing type imports (FeedPost used inline above)
 // ---------------------------------------------------------------------------
 type FeedPost = any;
+
+// ---------------------------------------------------------------------------
+// Developer Platform Connections
+// ---------------------------------------------------------------------------
+export function useDeveloperPlatforms(userId: string | undefined) {
+  return useQuery({
+    queryKey: ['developer-platforms', userId ?? ''],
+    queryFn: () => db.getDeveloperPlatforms(userId!),
+    enabled: Boolean(userId),
+    staleTime: 5 * 60 * 1000, // 5 min — cached data stays fresh
+  });
+}
+
+export function useConnectDeveloperPlatform() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: {
+      platform: string;
+      platform_username: string;
+      profile_url?: string;
+      cached_data?: any;
+      visibility?: string;
+    }) => db.connectDeveloperPlatform(payload),
+    onSuccess: () => {
+      // Invalidate for the current user — we don't have userId here,
+      // so invalidate all developer-platforms queries
+      void qc.invalidateQueries({ queryKey: ['developer-platforms'] });
+    },
+  });
+}
+
+export function useDisconnectDeveloperPlatform() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => db.disconnectDeveloperPlatform(id),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['developer-platforms'] }),
+  });
+}
+
+export function useRefreshDeveloperPlatform() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, cachedData }: { id: string; cachedData: any }) =>
+      db.refreshDeveloperPlatform(id, cachedData),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['developer-platforms'] }),
+  });
+}
+
+export function useUpdatePlatformVisibility() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, visibility }: { id: string; visibility: string }) =>
+      db.updateDeveloperPlatformVisibility(id, visibility),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['developer-platforms'] }),
+  });
+}
+

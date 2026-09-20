@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, MessageCircle, Trash2, Image as ImageIcon, Code2, Link2, Send } from 'lucide-react';
+import { Heart, MessageCircle, Trash2, Image as ImageIcon, Code2, Link2, Send, Loader2, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import type { EmojiReaction, FeedPost } from '@devconnect/shared';
 import { EMOJI_REACTIONS } from '@devconnect/shared';
@@ -8,6 +8,8 @@ import { Avatar, Badge, Button } from '../ui';
 import { avatarGradient, timeAgo, cn } from '../../lib/utils';
 import { useAuthStore } from '../../stores/authStore';
 import { useCreateFeedPost, useDeleteFeedPost, useReactToFeedPost } from '../../api/hooks';
+import { supabase } from '../../lib/supabase';
+import { FeedComments } from './FeedComments';
 
 const REACTION_ICONS: Record<EmojiReaction, string> = {
   like: '👍',
@@ -22,6 +24,8 @@ export function FeedPostCard({ post }: { post: FeedPost }) {
   const react = useReactToFeedPost();
   const remove = useDeleteFeedPost();
   const [showReactions, setShowReactions] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showComments, setShowComments] = useState(false);
 
   const isOwner = currentUser?.id === post.user_id;
   const myReaction = post.my_reaction ?? null;
@@ -86,6 +90,37 @@ export function FeedPostCard({ post }: { post: FeedPost }) {
         <p className="mt-4 whitespace-pre-wrap text-[15px] leading-relaxed text-label-secondary">{post.content}</p>
       )}
 
+      {post.media_urls && post.media_urls.length > 0 && (
+        <>
+          <div 
+            className="mt-4 overflow-hidden rounded-[14px] border border-[rgba(0,0,0,0.06)] cursor-pointer hover:opacity-90 transition-opacity bg-black/5"
+            onClick={() => setIsFullscreen(true)}
+          >
+            <img src={post.media_urls[0]} alt="Post media" className="w-full object-contain max-h-[300px]" />
+          </div>
+
+          {isFullscreen && (
+            <div 
+              className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in"
+              onClick={() => setIsFullscreen(false)}
+            >
+              <button 
+                className="absolute top-6 right-6 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors"
+                onClick={(e) => { e.stopPropagation(); setIsFullscreen(false); }}
+              >
+                <X size={24} />
+              </button>
+              <img 
+                src={post.media_urls[0]} 
+                alt="Post media fullscreen" 
+                className="max-w-full max-h-full object-contain rounded-lg shadow-2xl" 
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+          )}
+        </>
+      )}
+
       {post.code_snippet && (
         <div className="mt-4 overflow-hidden rounded-[14px] border border-[rgba(0,0,0,0.06)] bg-[#1D1D1F]">
           <div className="flex items-center justify-between px-4 py-2 border-b border-white/10">
@@ -108,13 +143,6 @@ export function FeedPostCard({ post }: { post: FeedPost }) {
         </a>
       )}
 
-      {post.media_urls?.length > 0 && (
-        <div className={`mt-4 grid gap-2 overflow-hidden rounded-[16px] ${post.media_urls.length > 1 ? 'grid-cols-2' : ''}`}>
-          {post.media_urls.slice(0, 4).map((url) => (
-            <img key={url} src={url} alt="" loading="lazy" className="max-h-80 w-full object-cover border border-[rgba(0,0,0,0.06)]" />
-          ))}
-        </div>
-      )}
 
       <footer className="mt-5 flex items-center gap-5 border-t border-[rgba(0,0,0,0.04)] pt-4 text-sm">
         <div className="relative">
@@ -146,10 +174,18 @@ export function FeedPostCard({ post }: { post: FeedPost }) {
           )}
         </div>
 
-        <button className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[14px] font-medium text-label-secondary hover:bg-apple-gray-6 hover:text-label-primary transition-colors">
+        <button 
+          onClick={() => setShowComments(v => !v)}
+          className={cn(
+            "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[14px] font-medium transition-colors",
+            showComments ? "bg-apple-gray-6 text-label-primary" : "text-label-secondary hover:bg-apple-gray-6 hover:text-label-primary"
+          )}
+        >
           <MessageCircle size={16} /> {post.comment_count || 'Comment'}
         </button>
       </footer>
+
+      {showComments && <FeedComments postId={post.id} />}
     </article>
   );
 }
@@ -162,6 +198,9 @@ export function FeedComposer() {
   const [link, setLink] = useState('');
   const [showCode, setShowCode] = useState(false);
   const [showLink, setShowLink] = useState(false);
+  const [mediaUrl, setMediaUrl] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const create = useCreateFeedPost();
 
   const submit = async () => {
@@ -172,6 +211,7 @@ export function FeedComposer() {
     try {
       await create.mutateAsync({
         content,
+        media_urls: mediaUrl ? [mediaUrl] : [],
         code_snippet: showCode && code ? code : null,
         code_language: showCode ? language : null,
         link_url: showLink && link ? link : null,
@@ -181,9 +221,43 @@ export function FeedComposer() {
       setLink('');
       setShowCode(false);
       setShowLink(false);
+      setMediaUrl(null);
       toast.success('Posted to your feed');
     } catch (err) {
       toast.error((err as Error).message);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!profile) {
+      toast.error('You must be logged in');
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Image must be less than 2MB');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const filename = `feed_${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
+      const path = `${profile.id}/${filename}`;
+
+      const { error } = await supabase.storage.from('blog-images').upload(path, file);
+      if (error) throw error;
+
+      const { data } = supabase.storage.from('blog-images').getPublicUrl(path);
+      setMediaUrl(data.publicUrl);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to upload image');
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -232,6 +306,20 @@ export function FeedComposer() {
             />
           )}
 
+          {mediaUrl && (
+            <div className="mt-3 relative inline-block animate-fade-in">
+              <img src={mediaUrl} alt="Upload preview" className="h-32 w-auto rounded-lg object-cover border border-[rgba(0,0,0,0.1)]" />
+              <button
+                type="button"
+                onClick={() => setMediaUrl(null)}
+                className="absolute -top-2 -right-2 bg-white rounded-full p-1 shadow-md border border-[rgba(0,0,0,0.06)] hover:bg-apple-gray-6"
+                title="Remove image"
+              >
+                <X size={14} className="text-label-secondary" />
+              </button>
+            </div>
+          )}
+
           <div className="mt-4 flex items-center justify-between border-t border-[rgba(0,0,0,0.04)] pt-4">
             <div className="flex gap-2">
               <button
@@ -256,9 +344,25 @@ export function FeedComposer() {
               >
                 <Link2 size={18} />
               </button>
-              <span className="rounded-full p-2.5 text-label-tertiary/50 cursor-not-allowed" title="Image upload coming from profile media">
-                <ImageIcon size={18} />
-              </span>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading || !!mediaUrl}
+                className={cn(
+                  "rounded-full p-2.5 transition-colors",
+                  mediaUrl ? "bg-apple-blue/10 text-apple-blue" : "text-label-tertiary hover:bg-apple-gray-6 hover:text-label-primary disabled:opacity-50 cursor-pointer"
+                )}
+                title="Add image"
+              >
+                {isUploading ? <Loader2 size={18} className="animate-spin" /> : <ImageIcon size={18} />}
+              </button>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleImageUpload}
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="hidden"
+              />
             </div>
             <Button size="md" onClick={() => void submit()} loading={create.isPending} className="!rounded-full px-5">
               <Send size={16} /> Post

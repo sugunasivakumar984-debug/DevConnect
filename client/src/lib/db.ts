@@ -314,6 +314,32 @@ export async function reactToFeedPost(postId: string, reaction: string) {
 }
 
 // ---------------------------------------------------------------------------
+// Feed Comments
+// ---------------------------------------------------------------------------
+export async function getFeedComments(postId: string) {
+  return throwOnError(
+    await supabase.from('feed_comments').select(`
+      *,
+      author:profiles!feed_comments_user_id_fkey(username, full_name, avatar_url)
+    `)
+    .eq('post_id', postId)
+    .order('created_at', { ascending: true })
+  ) as any[];
+}
+
+export async function createFeedComment(postId: string, content: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+  return throwOnError(await supabase.from('feed_comments').insert({ post_id: postId, user_id: user.id, content }).select().single());
+}
+
+export async function deleteFeedComment(id: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+  return throwOnError(await supabase.from('feed_comments').delete().eq('id', id).eq('user_id', user.id));
+}
+
+// ---------------------------------------------------------------------------
 // Connections
 // ---------------------------------------------------------------------------
 export async function getConnections() {
@@ -809,3 +835,86 @@ Make it realistic with placeholder data clearly marked with [brackets]. Keep it 
     return { suggestions: text };
   },
 };
+
+// ---------------------------------------------------------------------------
+// Developer Platform Connections
+// ---------------------------------------------------------------------------
+
+export async function getDeveloperPlatforms(userId: string): Promise<any[]> {
+  const { data, error } = await supabase
+    .from('developer_platform_connections')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: true });
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+export async function connectDeveloperPlatform(payload: {
+  platform: string;
+  platform_username: string;
+  profile_url?: string;
+  cached_data?: any;
+  visibility?: string;
+}): Promise<any> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { data, error } = await supabase
+    .from('developer_platform_connections')
+    .upsert(
+      {
+        user_id: user.id,
+        platform: payload.platform,
+        platform_username: payload.platform_username,
+        profile_url: payload.profile_url ?? null,
+        cached_data: payload.cached_data ?? null,
+        visibility: payload.visibility ?? 'public',
+        last_synced_at: payload.cached_data ? new Date().toISOString() : null,
+      },
+      { onConflict: 'user_id,platform' }
+    )
+    .select('*')
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function disconnectDeveloperPlatform(id: string): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { error } = await supabase
+    .from('developer_platform_connections')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', user.id); // RLS double-check
+  if (error) throw new Error(error.message);
+}
+
+export async function refreshDeveloperPlatform(id: string, cachedData: any): Promise<any> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { data, error } = await supabase
+    .from('developer_platform_connections')
+    .update({ cached_data: cachedData, last_synced_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .select('*')
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function updateDeveloperPlatformVisibility(id: string, visibility: string): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { error } = await supabase
+    .from('developer_platform_connections')
+    .update({ visibility })
+    .eq('id', id)
+    .eq('user_id', user.id);
+  if (error) throw new Error(error.message);
+}

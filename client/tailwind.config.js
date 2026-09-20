@@ -41,12 +41,12 @@ export default {
             6: '#F2F2F7',
           },
         },
-        // Semantic label colors (Apple HIG)
+        // Semantic label colors (Apple HIG) — use CSS vars so dark mode works
         label: {
-          primary:   '#1D1D1F',
-          secondary: '#6E6E73',
-          tertiary:  '#86868B',
-          quaternary:'#ADADB8',
+          primary:    'var(--text-primary)',
+          secondary:  'var(--text-secondary)',
+          tertiary:   'var(--text-tertiary)',
+          quaternary: 'var(--text-quaternary)',
         },
         // Semantic fills
         fill: {
@@ -55,14 +55,16 @@ export default {
           tertiary:  'rgba(118,118,128,0.12)',
           quaternary:'rgba(116,116,128,0.08)',
         },
-        // Semantic backgrounds
+        // Semantic backgrounds — use CSS vars so dark mode works
         bg: {
-          primary:   '#FFFFFF',
-          secondary: '#F2F2F7',
-          tertiary:  '#FFFFFF',
+          primary:   'var(--bg-base)',
+          secondary: 'var(--bg-secondary)',
+          tertiary:  'var(--bg-tertiary)',
+          surface:   'var(--bg-surface)',
+          muted:     'var(--bg-muted)',
         },
         // Separator
-        separator: 'rgba(60,60,67,0.12)',
+        separator: 'var(--separator)',
       },
 
       fontFamily: {
@@ -160,6 +162,10 @@ export default {
           from: { opacity: '0' },
           to:   { opacity: '1' },
         },
+        fadeOut: {
+          from: { opacity: '1' },
+          to:   { opacity: '0' },
+        },
         // Shimmer for skeletons
         shimmer: {
           '0%':   { backgroundPosition: '-1000px 0' },
@@ -223,6 +229,10 @@ export default {
           from: { opacity: '0', transform: 'scale(0.94) translateY(12px)' },
           to:   { opacity: '1', transform: 'scale(1)    translateY(0)'    },
         },
+        modalOut: {
+          from: { opacity: '1', transform: 'scale(1)    translateY(0)'    },
+          to:   { opacity: '0', transform: 'scale(0.94) translateY(12px)' },
+        },
         // Progress bar shimmer
         progressShimmer: {
           '0%':   { backgroundPosition: '200% 0' },
@@ -265,7 +275,9 @@ export default {
         'pulse-ring':    'pulseRing 1s ease-out forwards',
         'slide-in-right':'slideInRight 400ms cubic-bezier(0.34, 1.56, 0.64, 1) both',
         'slide-out-right':'slideOutRight 300ms cubic-bezier(0.4, 0, 0.2, 1) both',
-        'modal-in':      'modalIn 400ms cubic-bezier(0.34, 1.56, 0.64, 1) both',
+        'modal-in':      'modalIn 300ms cubic-bezier(0.34, 1.56, 0.64, 1) both',
+        'modal-out':     'modalOut 250ms cubic-bezier(0.4, 0, 0.2, 1) both',
+        'fade-out':      'fadeOut 250ms ease-out both',
         'shake':         'shake 400ms cubic-bezier(0.36, 0.07, 0.19, 0.97)',
         'subtle-pulse':  'subtlePulse 3s ease-in-out infinite',
         // Legacy

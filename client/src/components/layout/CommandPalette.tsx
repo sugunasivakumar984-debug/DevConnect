@@ -31,6 +31,23 @@ export function CommandPalette() {
   const navigate = useNavigate();
   const { commandPaletteOpen, setCommandPaletteOpen, theme, setTheme } = useUiStore();
   const { signOut } = useAuthStore();
+  const [shouldRender, setShouldRender] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+
+  useEffect(() => {
+    if (commandPaletteOpen) {
+      setShouldRender(true);
+      setIsClosing(false);
+    } else if (shouldRender) {
+      setIsClosing(true);
+      const timer = setTimeout(() => {
+        setShouldRender(false);
+        setIsClosing(false);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [commandPaletteOpen, shouldRender]);
+
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -92,7 +109,7 @@ export function CommandPalette() {
     setActiveIndex(0);
   }, [query]);
 
-  if (!commandPaletteOpen) return null;
+  if (!shouldRender) return null;
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
@@ -112,13 +129,13 @@ export function CommandPalette() {
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh]">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 animate-fade-in"
+        className={`absolute inset-0 ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}
         style={{ background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
         onClick={() => setCommandPaletteOpen(false)}
       />
       {/* Panel */}
       <div
-        className="relative z-10 w-full max-w-[560px] overflow-hidden animate-modal-in"
+        className={`relative z-10 w-full max-w-[560px] overflow-hidden ${isClosing ? 'animate-modal-out' : 'animate-modal-in'}`}
         style={{
           background: 'var(--glass-bg-strong)',
           backdropFilter: 'blur(40px) saturate(200%)',

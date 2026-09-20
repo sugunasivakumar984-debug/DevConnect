@@ -18,15 +18,17 @@ type ButtonSize    = 'sm' | 'md' | 'lg' | 'icon';
 
 const variants: Record<ButtonVariant, string> = {
   primary:
-    'bg-gradient-to-r from-apple-blue to-apple-teal text-white font-semibold shadow-accent-blue ' +
-    'hover:brightness-110 hover:-translate-y-0.5 hover:scale-[1.02] hover:shadow-accent-blue-lg ' +
-    'active:brightness-95 active:scale-[0.97] active:shadow-none ' +
-    'transition-[transform,box-shadow,filter] duration-[250ms] ease-bouncy will-change-transform ' +
+    'bg-black dark:bg-white text-white dark:text-black font-semibold ' +
+    'shadow-[0_2px_8px_rgba(0,0,0,0.15)] dark:shadow-[0_2px_8px_rgba(255,255,255,0.15)] ' +
+    'hover:opacity-90 hover:-translate-y-0.5 hover:scale-[1.02] hover:shadow-[0_8px_24px_rgba(0,0,0,0.20)] dark:hover:shadow-[0_8px_24px_rgba(255,255,255,0.20)] ' +
+    'active:opacity-100 active:scale-[0.97] active:shadow-none ' +
+    'transition-[transform,box-shadow,opacity] duration-[250ms] ease-bouncy will-change-transform ' +
     'disabled:opacity-50 disabled:pointer-events-none',
   secondary:
-    'bg-white/70 dark:bg-white/10 backdrop-blur-[20px] border border-black/[0.08] dark:border-white/[0.10] text-label-primary ' +
-    'hover:bg-white/90 dark:hover:bg-white/15 hover:border-black/[0.12] hover:-translate-y-px hover:shadow-level-2 ' +
-    'active:bg-white/80 dark:active:bg-white/12 active:scale-[0.97] active:-translate-y-0 ' +
+    'bg-[rgba(242,242,247,0.8)] dark:bg-[rgba(255,255,255,0.10)] backdrop-blur-[20px] ' +
+    'border border-[rgba(0,0,0,0.09)] dark:border-[rgba(255,255,255,0.12)] text-label-primary ' +
+    'hover:bg-white dark:hover:bg-[rgba(255,255,255,0.16)] hover:border-[rgba(0,0,0,0.14)] hover:-translate-y-px hover:shadow-level-2 ' +
+    'active:scale-[0.97] active:-translate-y-0 ' +
     'transition-all duration-fast ease-apple will-change-transform ' +
     'disabled:opacity-50 disabled:pointer-events-none',
   ghost:
@@ -38,14 +40,14 @@ const variants: Record<ButtonVariant, string> = {
   danger:
     'bg-gradient-to-r from-apple-red to-apple-pink text-white font-semibold ' +
     'shadow-[0_4px_14px_rgba(255,59,48,0.25)] ' +
-    'hover:brightness-110 hover:shadow-[0_8px_24px_rgba(255,59,48,0.4)] hover:-translate-y-0.5 hover:scale-[1.02] ' +
+    'hover:brightness-110 hover:shadow-[0_8px_24px_rgba(255,59,48,0.40)] hover:-translate-y-0.5 hover:scale-[1.02] ' +
     'active:brightness-95 active:scale-[0.97] ' +
     'transition-all duration-[250ms] ease-bouncy will-change-transform ' +
     'disabled:opacity-50 disabled:pointer-events-none',
   outline:
-    'border border-[rgba(0,0,0,0.12)] dark:border-white/[0.12] bg-transparent text-label-primary ' +
-    'hover:bg-black/[0.04] dark:hover:bg-white/[0.06] hover:border-black/[0.18] hover:-translate-y-px ' +
-    'active:bg-black/[0.06] dark:active:bg-white/[0.08] active:scale-[0.97] ' +
+    'border border-[rgba(0,0,0,0.10)] dark:border-[rgba(255,255,255,0.12)] bg-transparent text-label-primary ' +
+    'hover:bg-[rgba(0,0,0,0.04)] dark:hover:bg-[rgba(255,255,255,0.07)] hover:border-[rgba(0,0,0,0.16)] hover:-translate-y-px ' +
+    'active:bg-[rgba(0,0,0,0.06)] dark:active:bg-[rgba(255,255,255,0.09)] active:scale-[0.97] ' +
     'transition-all duration-fast ease-apple ' +
     'disabled:opacity-50 disabled:pointer-events-none',
 };
@@ -192,7 +194,10 @@ export function Card({ children, className, hover = false }: { children: ReactNo
 
 export function CardHeader({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className={cn('px-6 py-4 border-b border-[rgba(0,0,0,0.06)]', className)}>
+    <div
+      className={cn('px-6 py-4', className)}
+      style={{ borderBottom: '1px solid var(--glass-border-soft)' }}
+    >
       {children}
     </div>
   );
@@ -450,18 +455,21 @@ export function Modal({
       />
       {/* Sheet */}
       <div
-        className="relative z-10 w-full max-w-[560px] glass-strong rounded-modal shadow-modal animate-modal-in"
-        style={{ border: '1px solid rgba(255,255,255,0.85)' }}
-      >
+          className="relative z-10 w-full max-w-[560px] glass-strong rounded-modal shadow-modal animate-modal-in"
+          style={{ border: '1px solid var(--glass-border)' }}
+        >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-[rgba(0,0,0,0.06)]">
+        <div
+          className="flex items-center justify-between px-6 py-5"
+          style={{ borderBottom: '1px solid var(--glass-border-soft)' }}
+        >
           <h2 className="text-[20px] font-semibold text-label-primary tracking-[-0.01em]">{title}</h2>
           <button
             type="button"
             onClick={onClose}
             className={cn(
               'rounded-full p-1.5 text-label-tertiary',
-              'hover:bg-black/[0.06] hover:text-label-primary',
+              'hover:bg-[rgba(0,0,0,0.06)] dark:hover:bg-[rgba(255,255,255,0.08)] hover:text-label-primary',
               'transition-all duration-fast ease-apple',
               'active:scale-90'
             )}
@@ -474,7 +482,10 @@ export function Modal({
         <div className="max-h-[68vh] overflow-y-auto px-6 py-5">{children}</div>
         {/* Footer */}
         {footer && (
-          <div className="flex justify-end gap-3 border-t border-[rgba(0,0,0,0.06)] px-6 py-4">
+          <div
+            className="flex justify-end gap-3 px-6 py-4"
+            style={{ borderTop: '1px solid var(--glass-border-soft)' }}
+          >
             {footer}
           </div>
         )}

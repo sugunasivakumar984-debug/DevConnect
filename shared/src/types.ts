@@ -238,14 +238,33 @@ export interface FeedPost {
   media_urls: string[];
   code_snippet: string | null;
   code_language: string | null;
-  link_url: string | null;
+  link_url?: string;
   visibility: 'public' | 'connections';
   reaction_count: number;
   comment_count: number;
   created_at: ISODateString;
-  author?: Pick<Profile, 'id' | 'username' | 'avatar_url' | 'full_name' | 'headline'>;
+  author?: {
+    username: string;
+    full_name: string | null;
+    avatar_url: string | null;
+    headline: string | null;
+  };
   reactions?: Record<EmojiReaction, number>;
   my_reaction?: EmojiReaction | null;
+  comments?: FeedComment[];
+}
+
+export interface FeedComment {
+  id: UUID;
+  post_id: UUID;
+  user_id: UUID;
+  content: string;
+  created_at: ISODateString;
+  author?: {
+    username: string;
+    full_name: string | null;
+    avatar_url: string | null;
+  };
 }
 
 export type EmojiReaction = 'like' | 'love' | 'celebrate' | 'insightful' | 'funny';

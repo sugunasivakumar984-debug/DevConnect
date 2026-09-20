@@ -1,6 +1,6 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, Suspense } from 'react';
 import { Navbar, Sidebar } from './Navbar';
 import { CommandPalette } from './CommandPalette';
 import { NotificationToaster } from './NotificationToaster';
@@ -185,6 +185,7 @@ function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => void })
 /** Main authenticated app shell */
 export function AppLayout() {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const location = useLocation();
 
   return (
     <div className="relative min-h-screen" style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}>
@@ -211,8 +212,14 @@ export function AppLayout() {
               'pb-24 lg:pb-8',
             ].join(' ')}
           >
-            <div className="page-enter mx-auto w-full max-w-5xl">
-              <Outlet />
+            <div className="page-enter mx-auto w-full max-w-5xl" key={location.pathname}>
+              <Suspense fallback={
+                <div className="flex w-full items-center justify-center py-20">
+                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--separator-opaque)] border-t-[var(--accent)]" />
+                </div>
+              }>
+                <Outlet />
+              </Suspense>
             </div>
           </main>
         </div>

@@ -224,7 +224,19 @@ export default function Dashboard() {
                   <Link
                     key={post.id}
                     to={`/blog/${post.slug}`}
-                    className="group rounded-[20px] border border-[rgba(0,0,0,0.06)] bg-white/40 p-5 transition-all duration-fast hover:bg-white hover:border-black/[0.12] hover:shadow-level-2"
+                    className="group rounded-[18px] p-5 transition-all duration-fast"
+                    style={{
+                      background: 'var(--glass-bg)',
+                      border: '1px solid var(--glass-border-soft)',
+                    }}
+                    onMouseEnter={e => {
+                      (e.currentTarget as HTMLElement).style.background = 'var(--glass-bg-strong)';
+                      (e.currentTarget as HTMLElement).style.boxShadow = 'var(--shadow-level-2)';
+                    }}
+                    onMouseLeave={e => {
+                      (e.currentTarget as HTMLElement).style.background = 'var(--glass-bg)';
+                      (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+                    }}
                   >
                     <div className="flex items-center gap-2 text-[13px] font-medium text-label-tertiary">
                       <FileText size={14} /> {post.reading_time} min read · {post.views} views

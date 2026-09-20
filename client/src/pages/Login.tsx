@@ -57,7 +57,7 @@ export default function Login() {
   };
 
   return (
-    <div className="grid min-h-[100dvh] place-items-center bg-white px-4 relative overflow-hidden">
+    <div className="grid min-h-[100dvh] place-items-center px-4 relative overflow-hidden" style={{ background: 'var(--bg-base)' }}>
       {/* Ambient Background */}
       <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden>
         <div
@@ -78,16 +78,8 @@ export default function Login() {
 
       <Reveal className="w-full max-w-[420px] relative z-10">
         <div className="mb-10 flex flex-col items-center justify-center gap-4">
-          <Link to="/" className="flex items-center gap-2.5 transition-transform hover:scale-105 active:scale-95">
-            <span
-              className="grid h-12 w-12 place-items-center rounded-[14px] font-bold text-white text-xl"
-              style={{
-                background: 'linear-gradient(135deg, #007AFF 0%, #5AC8FA 100%)',
-                boxShadow: '0 4px 16px rgba(0,122,255,0.35)',
-              }}
-            >
-              D
-            </span>
+          <Link to="/" className="flex items-center transition-transform hover:scale-105 active:scale-95">
+            <img src="/Logo.png" alt="DevConnect Logo" className="h-[80px] w-auto object-contain scale-125" />
           </Link>
           <h1 className="text-heading-2 text-center tracking-tight">Sign in</h1>
           <p className="text-[15px] text-label-secondary text-center max-w-[280px]">Welcome back. Let's get you networking.</p>
@@ -140,12 +132,18 @@ export default function Login() {
           </form>
 
           <div className="my-7 flex items-center gap-4">
-            <div className="h-px flex-1 bg-[rgba(0,0,0,0.06)]" />
+            <div className="h-px flex-1" style={{ background: 'var(--glass-border-soft)' }} />
             <span className="text-[13px] font-semibold text-label-tertiary tracking-widest uppercase">OR</span>
-            <div className="h-px flex-1 bg-[rgba(0,0,0,0.06)]" />
+            <div className="h-px flex-1" style={{ background: 'var(--glass-border-soft)' }} />
           </div>
 
-          <Button variant="secondary" size="lg" className="w-full text-[16px] bg-white border border-[rgba(0,0,0,0.1)] hover:bg-apple-gray-6 shadow-sm" onClick={onGithub} loading={githubLoading}>
+          <Button
+            variant="secondary"
+            size="lg"
+            className="w-full text-[16px]"
+            onClick={onGithub}
+            loading={githubLoading}
+          >
             <Github size={18} className="mr-1" /> Continue with GitHub
           </Button>
 
