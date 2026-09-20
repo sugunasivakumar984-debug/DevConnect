@@ -14,6 +14,10 @@ import {
   BadgeCheck,
   ThumbsUp,
   Code2,
+  Check,
+  X,
+  UserMinus,
+  Clock,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
@@ -24,6 +28,10 @@ import {
   useStartConversation,
   useToggleFollow,
   useDevScore,
+  useConnections,
+  usePendingConnections,
+  useRespondToConnection,
+  useRemoveConnection,
 } from '../api/hooks';
 import { useAuthStore } from '../stores/authStore';
 import { Avatar, Badge, Button, Card, CardBody, CardHeader, EmptyState, Skeleton, Reveal } from '../components/ui';
@@ -44,6 +52,12 @@ export default function Profile() {
   const startConversation = useStartConversation();
   const toggleFollow = useToggleFollow();
   const endorse = useEndorseSkill();
+  
+  const { data: connections } = useConnections();
+  const { data: pending } = usePendingConnections();
+  const respond = useRespondToConnection();
+  const remove = useRemoveConnection();
+
   const [tab, setTab] = useState<'projects' | 'experience' | 'about' | 'developer'>('projects');
 
   if (isLoading) {
@@ -62,10 +76,43 @@ export default function Profile() {
   const isSelf = currentUser?.id === profile.id;
   const endorsementMap = new Map((endorsements ?? []).map((e: any) => [e.skill.id, e]));
 
+  let connectionState: 'none' | 'pending_outgoing' | 'pending_incoming' | 'connected' = 'none';
+  let connectionId: string | null = null;
+
+  if (connections?.some((c: any) => c.requester?.id === profile.id || c.addressee?.id === profile.id)) {
+    connectionState = 'connected';
+    const c = connections.find((c: any) => c.requester?.id === profile.id || c.addressee?.id === profile.id);
+    connectionId = c?.id ?? null;
+  } else if (pending?.outgoing?.some((c: any) => c.addressee?.id === profile.id)) {
+    connectionState = 'pending_outgoing';
+  } else if (pending?.incoming?.some((c: any) => c.requester?.id === profile.id)) {
+    connectionState = 'pending_incoming';
+    const c = pending.incoming.find((c: any) => c.requester?.id === profile.id);
+    connectionId = c?.id ?? null;
+  }
+
   const onConnect = async () => {
     try {
       await sendRequest.mutateAsync({ addressee_id: profile.id });
       toast.success('Connection request sent');
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  };
+
+  const onRespond = async (id: string, action: 'accept' | 'reject') => {
+    try {
+      await respond.mutateAsync({ id, action });
+      toast.success(action === 'accept' ? 'Connection accepted' : 'Request declined');
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  };
+
+  const onRemoveConnection = async (id: string) => {
+    try {
+      await remove.mutateAsync(id);
+      toast.success('Connection removed');
     } catch (err) {
       toast.error((err as Error).message);
     }
@@ -121,9 +168,32 @@ export default function Profile() {
 
               {!isSelf && (
                 <div className="flex flex-wrap gap-2.5 pb-2">
-                  <Button size="md" onClick={() => void onConnect()} loading={sendRequest.isPending}>
-                    <UserPlus size={16} /> Connect
-                  </Button>
+                  {connectionState === 'none' && (
+                    <Button size="md" onClick={() => void onConnect()} loading={sendRequest.isPending}>
+                      <UserPlus size={16} /> Connect
+                    </Button>
+                  )}
+                  {connectionState === 'pending_outgoing' && (
+                    <Button size="md" variant="secondary" disabled>
+                      <Clock size={16} /> Pending
+                    </Button>
+                  )}
+                  {connectionState === 'pending_incoming' && connectionId && (
+                    <>
+                      <Button size="md" onClick={() => void onRespond(connectionId, 'accept')} loading={respond.isPending}>
+                        <Check size={16} /> Accept
+                      </Button>
+                      <Button size="md" variant="secondary" onClick={() => void onRespond(connectionId, 'reject')} loading={respond.isPending}>
+                        <X size={16} /> Decline
+                      </Button>
+                    </>
+                  )}
+                  {connectionState === 'connected' && connectionId && (
+                    <Button size="md" variant="secondary" onClick={() => void onRemoveConnection(connectionId)} loading={remove.isPending}>
+                      <UserMinus size={16} /> Disconnect
+                    </Button>
+                  )}
+                  
                   <Button size="md" variant="secondary" onClick={() => void onMessage()}>
                     <MessageSquare size={16} /> Message
                   </Button>

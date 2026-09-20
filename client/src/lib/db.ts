@@ -419,6 +419,7 @@ export async function startConversation(otherUserId: string): Promise<Conversati
   const { data, error } = await supabase.rpc('get_or_create_conversation', { p_other_id: otherUserId });
   if (error) throw new Error(error.message);
   const conv = await supabase.from('conversations').select('*, user_a_profile:profiles!conversations_user_a_fkey(id,username,avatar_url,full_name), user_b_profile:profiles!conversations_user_b_fkey(id,username,avatar_url,full_name)').eq('id', data).single();
+  if (conv.error) throw new Error(conv.error.message);
   return conv.data as Conversation;
 }
 

@@ -38,7 +38,11 @@ export function subscribeConversation(conversationId: string, handlers: {
 }) {
   const channel = supabase.channel(REALTIME_CHANNELS.conversation(conversationId));
   if (handlers.onMessage) {
-    channel.on('broadcast', { event: 'message:new' }, (m) => handlers.onMessage!(m.payload as RealtimeEvents['message:new']));
+    channel.on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` },
+      (payload: any) => handlers.onMessage!(payload.new as RealtimeEvents['message:new'])
+    );
   }
   if (handlers.onTyping) {
     channel.on('broadcast', { event: 'message:typing' }, (m) => handlers.onTyping!(m.payload as RealtimeEvents['message:typing']));

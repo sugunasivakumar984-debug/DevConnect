@@ -1,13 +1,26 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Search, Sparkles, MapPin, Filter, Bookmark } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Search, Sparkles, MapPin, Filter, Bookmark, UserPlus, Clock, Check, X, UserMinus, MessageSquare } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { useAiSearch, useSaveSearch, useSearchDevelopers, useTrendingSkills } from '../api/hooks';
+import { 
+  useAiSearch, 
+  useSaveSearch, 
+  useSearchDevelopers, 
+  useTrendingSkills,
+  useConnections,
+  usePendingConnections,
+  useSendConnectionRequest,
+  useRespondToConnection,
+  useRemoveConnection,
+  useStartConversation
+} from '../api/hooks';
+import { useAuthStore } from '../stores/authStore';
 import { Avatar, Badge, Button, Card, CardBody, Chip, EmptyState, Input, Label, Skeleton } from '../components/ui';
 import { avatarGradient, availabilityLabel } from '../lib/utils';
 import type { DeveloperSearchFilters, Profile } from '@devconnect/shared';
 
 export default function Developers() {
+  const navigate = useNavigate();
   const [filters, setFilters] = useState<DeveloperSearchFilters>({ page: 1, pageSize: 12 });
   const [showFilters, setShowFilters] = useState(false);
   const [aiQuery, setAiQuery] = useState('');
@@ -17,6 +30,14 @@ export default function Developers() {
   const { data: trending } = useTrendingSkills();
   const aiSearch = useAiSearch();
   const saveSearch = useSaveSearch();
+  
+  const currentUser = useAuthStore((s) => s.user);
+  const { data: connections } = useConnections();
+  const { data: pending } = usePendingConnections();
+  const sendRequest = useSendConnectionRequest();
+  const respond = useRespondToConnection();
+  const remove = useRemoveConnection();
+  const startConversation = useStartConversation();
 
   const update = (patch: Partial<DeveloperSearchFilters>) =>
     setFilters((f) => ({ ...f, ...patch, page: 1 }));
@@ -40,6 +61,42 @@ export default function Developers() {
         filters: filters as unknown as Record<string, unknown>,
       });
       toast.success('Search saved');
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  };
+
+  const onConnect = async (id: string) => {
+    try {
+      await sendRequest.mutateAsync({ addressee_id: id });
+      toast.success('Connection request sent');
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  };
+
+  const onRespond = async (id: string, action: 'accept' | 'reject') => {
+    try {
+      await respond.mutateAsync({ id, action });
+      toast.success(action === 'accept' ? 'Connection accepted' : 'Request declined');
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  };
+
+  const onRemoveConnection = async (id: string) => {
+    try {
+      await remove.mutateAsync(id);
+      toast.success('Connection removed');
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  };
+
+  const onMessage = async (userId: string) => {
+    try {
+      const conversation = await startConversation.mutateAsync(userId);
+      navigate(`/messages/${conversation.id}`);
     } catch (err) {
       toast.error((err as Error).message);
     }
@@ -185,47 +242,102 @@ export default function Developers() {
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {items.map((person: any) => (
-          <Card key={person.id} className="card-hover">
-            <CardBody className="space-y-3">
-              <div className="flex items-center gap-3">
-                <Avatar
-                  src={person.avatar_url}
-                  name={person.full_name ?? person.username}
-                  size={44}
-                  gradient={avatarGradient(person.username)}
-                />
-                <div className="min-w-0">
-                  <Link to={`/u/${person.username}`} className="block truncate font-medium hover:text-brand-300">
-                    {person.full_name ?? person.username}
-                  </Link>
-                  <p className="truncate text-xs text-slate-500">@{person.username}</p>
+        {items.map((person: any) => {
+          const isSelf = currentUser?.id === person.id;
+          let connectionState: 'none' | 'pending_outgoing' | 'pending_incoming' | 'connected' = 'none';
+          let connectionId: string | null = null;
+
+          if (connections?.some((c: any) => c.requester?.id === person.id || c.addressee?.id === person.id)) {
+            connectionState = 'connected';
+            const c = connections.find((c: any) => c.requester?.id === person.id || c.addressee?.id === person.id);
+            connectionId = c?.id ?? null;
+          } else if (pending?.outgoing?.some((c: any) => c.addressee?.id === person.id)) {
+            connectionState = 'pending_outgoing';
+          } else if (pending?.incoming?.some((c: any) => c.requester?.id === person.id)) {
+            connectionState = 'pending_incoming';
+            const c = pending.incoming.find((c: any) => c.requester?.id === person.id);
+            connectionId = c?.id ?? null;
+          }
+
+          return (
+            <Card key={person.id} className="card-hover">
+              <CardBody className="space-y-3 flex flex-col h-full">
+                <div className="flex items-center gap-3">
+                  <Avatar
+                    src={person.avatar_url}
+                    name={person.full_name ?? person.username}
+                    size={44}
+                    gradient={avatarGradient(person.username)}
+                  />
+                  <div className="min-w-0">
+                    <Link to={`/u/${person.username}`} className="block truncate font-medium hover:text-brand-300">
+                      {person.full_name ?? person.username}
+                    </Link>
+                    <p className="truncate text-xs text-slate-500">@{person.username}</p>
+                  </div>
                 </div>
-              </div>
 
-              <p className="line-clamp-2 text-sm text-slate-400">
-                {person.headline ?? 'Developer on DevConnect'}
-              </p>
+                <p className="line-clamp-2 text-sm text-slate-400 flex-1">
+                  {person.headline ?? 'Developer on DevConnect'}
+                </p>
 
-              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                {person.location && (
-                  <span className="flex items-center gap-1">
-                    <MapPin size={12} /> {person.location}
-                  </span>
-                )}
-                <Badge tone={person.availability === 'open_to_work' ? 'success' : 'default'}>
-                  {availabilityLabel(person.availability)}
-                </Badge>
-              </div>
+                <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 pb-2">
+                  {person.location && (
+                    <span className="flex items-center gap-1">
+                      <MapPin size={12} /> {person.location}
+                    </span>
+                  )}
+                  <Badge tone={person.availability === 'open_to_work' ? 'success' : 'default'}>
+                    {availabilityLabel(person.availability)}
+                  </Badge>
+                </div>
 
-              <Link to={`/u/${person.username}`} className="block">
-                <Button size="sm" variant="secondary" className="w-full">
-                  View profile
-                </Button>
-              </Link>
-            </CardBody>
-          </Card>
-        ))}
+                <div className="pt-3 border-t border-slate-800/50 mt-auto flex flex-col gap-2">
+                  <Link to={`/u/${person.username}`} className="block w-full">
+                    <Button size="sm" variant="secondary" className="w-full">
+                      View profile
+                    </Button>
+                  </Link>
+                  
+                  {!isSelf && (
+                    <div className="flex gap-2">
+                      {connectionState === 'none' && (
+                        <Button size="sm" variant="outline" className="flex-1" onClick={() => void onConnect(person.id)} loading={sendRequest.isPending}>
+                          <UserPlus size={14} /> Connect
+                        </Button>
+                      )}
+                      {connectionState === 'pending_outgoing' && (
+                        <Button size="sm" variant="outline" className="flex-1" disabled>
+                          <Clock size={14} /> Pending
+                        </Button>
+                      )}
+                      {connectionState === 'pending_incoming' && connectionId && (
+                        <>
+                          <Button size="sm" variant="primary" className="flex-1" onClick={() => void onRespond(connectionId, 'accept')} loading={respond.isPending}>
+                            <Check size={14} /> Accept
+                          </Button>
+                          <Button size="sm" variant="outline" className="flex-1" onClick={() => void onRespond(connectionId, 'reject')} loading={respond.isPending}>
+                            <X size={14} /> Decline
+                          </Button>
+                        </>
+                      )}
+                      {connectionState === 'connected' && connectionId && (
+                        <>
+                          <Button size="sm" variant="primary" className="flex-1" onClick={() => void onMessage(person.id)} loading={startConversation.isPending}>
+                            <MessageSquare size={14} /> Message
+                          </Button>
+                          <Button size="sm" variant="outline" className="flex-[0.5]" onClick={() => void onRemoveConnection(connectionId)} loading={remove.isPending}>
+                            <UserMinus size={14} /> Disconnect
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </CardBody>
+            </Card>
+          );
+        })}
       </div>
 
       {!aiResults && data && data.totalPages > 1 && (
