@@ -139,11 +139,6 @@ export default function Landing() {
 
   const featuresRef = useRef<HTMLDivElement>(null);
 
-  // Redirect if logged in
-  if (session) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
   // Scroll-reveal for feature cards
   useEffect(() => {
     const cards = featuresRef.current?.querySelectorAll('.feature-card');
@@ -161,6 +156,11 @@ export default function Landing() {
     cards.forEach(c => obs.observe(c));
     return () => obs.disconnect();
   }, []);
+
+  // Redirect if logged in
+  if (session) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   return (
     <div
