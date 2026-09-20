@@ -11,6 +11,9 @@ export default defineConfig({
       '@devconnect/shared': path.resolve(__dirname, '../shared/src/index.ts'),
     },
   },
+  define: {
+    'import.meta.env.GEMINI_API_KEY': JSON.stringify(process.env.GEMINI_API_KEY || ''),
+  },
   server: {
     port: 5173,
     host: true,
